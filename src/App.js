@@ -1,8 +1,13 @@
 import React from 'react';
 import { useState } from 'react';
 import Button from '@material-ui/core/Button';
-//import { withStyles } from '@material-ui/core/styles';
 import TextField from '@material-ui/core/TextField';
+import { createStore } from 'redux';
+import { Provider } from 'react-redux';
+import Examples from './containers/Examples.js';
+import examplesReducer from './reducers/examples.js';
+
+const store = createStore(examplesReducer);
 
 const styles = {
     button: {
@@ -34,6 +39,7 @@ const App = () => {
     const [num, setNum] = useState(0);
     const [display, setDisplay] = useState("");
     const [exampleArray, setExampleArray] = useState([]);
+    const [beArray, setBeArray] = useState([]);
     const [expression, setExpression] = useState({
             sign: "",
             result: 0,
@@ -41,7 +47,6 @@ const App = () => {
 
     const numClick = (value) => {
       const strNumber = new String(num);
-      //e.preventDefault();
       if (value === "." || strNumber.includes(".")) {
         setNum(num+value);
       } else {
@@ -62,18 +67,6 @@ const App = () => {
 
     const addToArray = (array, element) => {
         array.push(element+"\n");
-    }
-
-    const transformArray = (array) => {
-        let joinedString = "";
-        if (array.length > 0) {
-            let arrayWithoutLastElement = array.slice(0, array.length-1);
-            joinedString = arrayWithoutLastElement.join("");
-            joinedString += "-------------------------\n"+
-                            array[array.length-1]+
-                            "-------------------------"
-        }
-        return joinedString;
     }
 
     const calculateExpression = (valueForCalc, signForCalc) => {
@@ -115,9 +108,11 @@ const App = () => {
                                   (result-valueForCalc):
                                       (sign === "*")?
                                       (result*valueForCalc):
-                                          (sign === "/")?
+                                          (sign === "/")&&(valueForCalc!==0)?
                                           (result/valueForCalc):
-                                          0;
+                                              (sign === "/")&&(valueForCalc===0)?
+                                              ("Division by zero"):
+                                              0;
             setExpression({
                 result: currentResult,
                 sign: signForCalc,
@@ -138,7 +133,6 @@ const App = () => {
     }
 
     const deleteClick = () => {
-          //e.preventDefault();
           setDisplay("");
           setNum(0);
           setExpression({
@@ -147,12 +141,51 @@ const App = () => {
           })
     };
 
-    const receiveExamples = () => {
-              fetch("http://localhost:8080/math/examples?count=5")
-              .then(result => console.log(result.json()))
-               .catch(error => console.log("no"))
-               .finally(() => console.log('Викликаємо цей код у будь-якому випадку'));
+    const receiveExamples = (count) => {
+               fetch("http://localhost:8080/math/examples?count="+count, {method: "GET"})
+              .then(result => result.json())
+              .then(exampleArray => parseExamples(exampleArray))
+              .catch(error => console.log(error));
     };
+
+    const parseExamples = (array) => {
+        array.forEach(element => {console.log(element);
+                            let argument1 = parseInt(element);
+                            let argument2 = 0;
+                            let result = 0;
+                            let resultExpression = "";
+                            if (element.includes("+")) {
+                                argument2 = parseInt(element.slice(element.indexOf("+")+1));
+                                result = argument1+argument2;
+                                resultExpression = ""+argument1+"+"+argument2+"="+result;
+                            } else if (element.includes("-")) {
+                                argument2 = parseInt(element.slice(element.indexOf("-")+1));
+                                result = argument1-argument2;
+                                resultExpression = ""+argument1+"-"+argument2+"="+result;
+                            } else if (element.includes("*")) {
+                                argument2 = parseInt(element.slice(element.indexOf("*")+1));
+                                result = argument1*argument2;
+                                resultExpression = ""+argument1+"*"+argument2+"="+result;
+                            } else if (element.includes("/")) {
+                                argument2 = parseInt(element.slice(element.indexOf("/")+1));
+                                result = argument1/argument2;
+                                resultExpression = ""+argument1+"/"+argument2+"="+result;
+                            }
+                            addToArray(exampleArray, resultExpression);
+        });
+    }
+
+    const transformArray = (array) => {
+        let joinedString = "";
+        if (array.length > 0) {
+            let arrayWithoutLastElement = array.slice(0, array.length-1);
+            joinedString = arrayWithoutLastElement.join("");
+            joinedString += "-------------------------\n"+
+                            array[array.length-1]+
+                            "-------------------------"
+        }
+        return joinedString;
+    }
 
     return (
     <div style = {styles.wrapper}>
@@ -246,7 +279,7 @@ const App = () => {
         </div>
         <div>
         <Button style = {styles.examples} variant="contained"
-                onClick={()=>{receiveExamples()}}>
+                onClick={()=>{receiveExamples(5)}}>
           Отримати та вирішити приклади
         </Button>
         </div>
@@ -254,4 +287,4 @@ const App = () => {
     );
 }
 
-export default App; //withStyles(styles)(App);
+export default App;
