@@ -1,27 +1,27 @@
-const requestExamples = () => {
+const requestExamples = () => ({
     type: 'REQUEST_EXAMPLES',
-};
+});
 
-const receiveExamples = examples => {
+const receiveExamples = examples => ({
     examples,
     type: 'RECEIVE_EXAMPLES',
-};
+});
 
-const errorReceiveExamples = () => {
+const errorReceiveExamples = () => ({
     type: 'ERROR_RECEIVE_EXAMPLES',
-};
+});
+
 
 const getExamples = (count) => {
-    fetch("http://localhost:8080/math/examples?count="+count, {method: "GET"})
-                  .then(result => result.json())
-                  .then(exampleArray => parseExamples(exampleArray))
-                  .catch(error => console.log(error));
+        const response = fetch("http://localhost:8080/math/examples?count="+count, {method: "GET"})
+        return response;
 };
 
-const fetchExamples = (count) => (dispatch) => {
+const fetchExamples = ({count}) => (dispatch) => {
     dispatch(requestExamples());
     return getExamples(count)
-    .then(examples => dispatch(receiveExamples()))
+    .then(result => result.json())
+    .then(examples => console.log(dispatch(receiveExamples(examples))))
     .catch(examples => dispatch(errorReceiveExamples()));
 };
 

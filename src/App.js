@@ -4,8 +4,8 @@ import Button from '@material-ui/core/Button';
 import TextField from '@material-ui/core/TextField';
 import { createStore } from 'redux';
 import { Provider } from 'react-redux';
-import Examples from './containers/Examples.js';
 import examplesReducer from './reducers/examples.js';
+import exampleActions from 'D:/calculator/src/actions/examples';
 
 const store = createStore(examplesReducer);
 
@@ -39,7 +39,7 @@ const App = () => {
     const [num, setNum] = useState(0);
     const [display, setDisplay] = useState("");
     const [exampleArray, setExampleArray] = useState([]);
-    const [beArray, setBeArray] = useState([]);
+    const [backEndExamples, setBackEndExamples] = useState("");
     const [expression, setExpression] = useState({
             sign: "",
             result: 0,
@@ -141,12 +141,16 @@ const App = () => {
           })
     };
 
-    const receiveExamples = (count) => {
-               fetch("http://localhost:8080/math/examples?count="+count, {method: "GET"})
-              .then(result => result.json())
-              .then(exampleArray => parseExamples(exampleArray))
-              .catch(error => console.log(error));
+    const receiveExamplesFromBE = () => {
+            const fetchResult = exampleActions.fetchExamples({ count: 5, })(store.dispatch);
     };
+    const returnExamplesFromBE = () => {
+                receiveExamplesFromBE();
+                const listExamples = store.getState().list;
+                const res = parseExamples(listExamples);
+                console.log(res);
+                return res;
+        };
 
     const parseExamples = (array) => {
         array.forEach(element => {console.log(element);
@@ -171,7 +175,8 @@ const App = () => {
                                 result = argument1/argument2;
                                 resultExpression = ""+argument1+"/"+argument2+"="+result;
                             }
-                            addToArray(exampleArray, resultExpression);
+                            setBackEndExamples(result+" \n");
+                            return addToArray(exampleArray, resultExpression);
         });
     }
 
@@ -279,7 +284,7 @@ const App = () => {
         </div>
         <div>
         <Button style = {styles.examples} variant="contained"
-                onClick={()=>{receiveExamples(5)}}>
+                onClick={()=> {returnExamplesFromBE()}}>
           Отримати та вирішити приклади
         </Button>
         </div>
