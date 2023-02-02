@@ -21,7 +21,7 @@ const fetchExamples = ({count}) => (dispatch) => {
     dispatch(requestExamples());
     return getExamples(count)
     .then(result => result.json())
-    .then(examples => console.log(dispatch(receiveExamples(examples))))
+    .then(examples => dispatch(receiveExamples(examples)))
     .catch(examples => dispatch(errorReceiveExamples()));
 };
 

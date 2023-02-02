@@ -2,25 +2,22 @@ import React from 'react';
 import { useState } from 'react';
 import Button from '@material-ui/core/Button';
 import TextField from '@material-ui/core/TextField';
+import { withStyles } from '@material-ui/core/styles';
 import { createStore } from 'redux';
 import { Provider } from 'react-redux';
-import examplesReducer from './reducers/examples.js';
-import exampleActions from 'D:/calculator/src/actions/examples';
+import examplesReducer from './Examples/reducers/examples.js';
+import exampleActions from './Examples/actions/examples';
+import Examples from './Examples'
 
 const store = createStore(examplesReducer);
 
-const styles = {
+const styles = () => ({
     button: {
             color: "black",
             fontSize: 20,
             fontWeight: 700,
             margin: 3,
     },
-    examples: {
-                color: "black",
-                fontSize: 12,
-                margin: 3,
-        },
     wrapper: {
             borderStyle: "solid",
             borderWidth: "12px",
@@ -32,264 +29,267 @@ const styles = {
             marginLeft: "auto",
             marginRight: "auto",
     },
-};
+});
 
-const App = () => {
-
-    const [num, setNum] = useState(0);
-    const [display, setDisplay] = useState("");
-    const [exampleArray, setExampleArray] = useState([]);
-    const [backEndExamples, setBackEndExamples] = useState("");
-    const [expression, setExpression] = useState({
-            sign: "",
-            result: 0,
-          });
-
-    const numClick = (value) => {
-      const strNumber = new String(num);
-      if (value === "." || strNumber.includes(".")) {
-        setNum(num+value);
-      } else {
-        setNum(num*10+value);
-      }
-      setDisplay(""+display+value);
-    };
-
-    const operationClick = (value) => {
-      const result = calculateExpression(num, value);
-      if (result !=="") {
-        addToArray(exampleArray, result);
-      }
-      if (value !== "=") {
-        setNum(0);
-      }
-    };
-
-    const addToArray = (array, element) => {
-        array.push(element+"\n");
-    }
-
-    const calculateExpression = (valueForCalc, signForCalc) => {
-        const displayStr = String(display);
-        let expressionToReturn = "";
-        const result = expression.result;
-        const sign = expression.sign;
-
-        if (displayStr.endsWith("+") || displayStr.endsWith("-") ||
-            displayStr.endsWith("*") || displayStr.endsWith("/")) {
-            if (signForCalc === "=") {
-                return expressionToReturn;
-            }
-            setExpression({
-                           ...expression,
-                           sign: signForCalc,
-            })
-            setDisplay(display.slice(0,display.length-1)+signForCalc);
-          return expressionToReturn;
-        }
-
-         if (!displayStr.includes("+") && !displayStr.includes("-") &&
-             !displayStr.includes("*") && !displayStr.includes("/")) {
-             if (signForCalc === "=") {
-                 return expressionToReturn;
-             }
-         }
-
-        if (sign === "") {
-            setExpression({
-                result: valueForCalc,
-                sign: signForCalc,
-            })
-            setDisplay(display+signForCalc);
-        } else {
-        const currentResult = (sign === "+")?
-                              (Number(result)+Number(valueForCalc)):
-                                  (sign === "-")?
-                                  (result-valueForCalc):
-                                      (sign === "*")?
-                                      (result*valueForCalc):
-                                          (sign === "/")&&(valueForCalc!==0)?
-                                          (result/valueForCalc):
-                                              (sign === "/")&&(valueForCalc===0)?
-                                              ("Division by zero"):
-                                              0;
-            setExpression({
-                result: currentResult,
-                sign: signForCalc,
-            })
-            expressionToReturn = String(result)+sign+
-                                 String(valueForCalc)+"="+currentResult;
-            setDisplay(currentResult+signForCalc);
-            if (signForCalc === "=") {
-                setNum(currentResult);
-                setDisplay(currentResult);
-                setExpression({
-                                sign: "",
-                                result: 0,
-                            })
-            }
-        }
-        return expressionToReturn
-    }
-
-    const deleteClick = () => {
-          setDisplay("");
-          setNum(0);
-          setExpression({
-              sign: "",
-              result: 0,
-          })
-    };
-
-    const receiveExamplesFromBE = () => {
-            const fetchResult = exampleActions.fetchExamples({ count: 5, })(store.dispatch);
-    };
-    const returnExamplesFromBE = () => {
-                receiveExamplesFromBE();
-                const listExamples = store.getState().list;
-                const res = parseExamples(listExamples);
-                console.log(res);
-                return res;
+class App extends React.Component {
+      constructor(props) {
+        super(props);
+        this.state = {
+            num: 0,
+            display: "",
+            exampleArray: [],
+            expression: {
+                sign: "",
+                result: 0,
+            },
+            calculatedArray: [],
         };
+      };
 
-    const parseExamples = (array) => {
-        array.forEach(element => {console.log(element);
-                            let argument1 = parseInt(element);
-                            let argument2 = 0;
-                            let result = 0;
-                            let resultExpression = "";
-                            if (element.includes("+")) {
-                                argument2 = parseInt(element.slice(element.indexOf("+")+1));
-                                result = argument1+argument2;
-                                resultExpression = ""+argument1+"+"+argument2+"="+result;
-                            } else if (element.includes("-")) {
-                                argument2 = parseInt(element.slice(element.indexOf("-")+1));
-                                result = argument1-argument2;
-                                resultExpression = ""+argument1+"-"+argument2+"="+result;
-                            } else if (element.includes("*")) {
-                                argument2 = parseInt(element.slice(element.indexOf("*")+1));
-                                result = argument1*argument2;
-                                resultExpression = ""+argument1+"*"+argument2+"="+result;
-                            } else if (element.includes("/")) {
-                                argument2 = parseInt(element.slice(element.indexOf("/")+1));
-                                result = argument1/argument2;
-                                resultExpression = ""+argument1+"/"+argument2+"="+result;
-                            }
-                            setBackEndExamples(result+" \n");
-                            return addToArray(exampleArray, resultExpression);
-        });
-    }
+      numClick(value) {
+          const strNumber = new String(this.state.num);
+          if (value === "." || strNumber.includes(".")) {
+            this.setState({num: (this.state.num+value)});
+          } else {
+            this.setState({num: (this.state.num*10+value)});
+          }
+          this.setState({display: (""+this.state.display+value)});
+      };
 
-    const transformArray = (array) => {
-        let joinedString = "";
-        if (array.length > 0) {
-            let arrayWithoutLastElement = array.slice(0, array.length-1);
-            joinedString = arrayWithoutLastElement.join("");
-            joinedString += "-------------------------\n"+
-                            array[array.length-1]+
-                            "-------------------------"
+      operationClick(value) {
+        const result = this.calculateExpression(this.state.num, value);
+        if (result !=="") {
+          this.addToArray(this.state.exampleArray, result);
         }
-        return joinedString;
-    }
+        if (value !== "=") {
+          this.setState({num: 0});
+        }
+      };
 
-    return (
-    <div style = {styles.wrapper}>
-    <div>
-        <TextField id="outlined" multiline maxRows={4} value={transformArray(exampleArray)}
-                   variant="outlined" size="medium"
-                   inputProps={{style: { textAlign: 'right' }}}/>
-    </div>
-    <div>
-        <TextField id="outlined" value={display}
-                   variant="filled" size="small" color="secondary"
-                   inputProps={{style: { textAlign: 'center' }}}/>
-        </div>
-        <div>
-        <Button style = {styles.button} variant="contained"
-                onClick={() => {numClick(7)}}>
-          7
-        </Button>
-        <Button style = {styles.button} variant="contained"
-                onClick={() => {numClick(8)}}>
-          8
-        </Button>
-        <Button style = {styles.button} variant="contained"
-                onClick={() => {numClick(9)}}>
-          9
-        </Button>
-        <Button style = {styles.button} variant="contained"
-                onClick={() => {operationClick('/')}}>
-          /
-        </Button>
-        </div>
-        <div>
-        <Button style = {styles.button} variant="contained"
-                onClick={() => {numClick(4)}}>
-          4
-        </Button>
-        <Button style = {styles.button} variant="contained"
-                onClick={() => {numClick(5)}}>
-          5
-        </Button>
-        <Button style = {styles.button} variant="contained"
-                onClick={() => {numClick(6)}}>
-          6
-        </Button>
-        <Button style = {styles.button} variant="contained"
-                onClick={() => {operationClick('*')}}>
-          *
-        </Button>
-        </div>
-        <div>
-        <Button style = {styles.button} variant="contained"
-                onClick={() => {numClick(1)}}>
-          1
-        </Button>
-        <Button style = {styles.button} variant="contained"
-                onClick={() => {numClick(2)}}>
-          2
-        </Button>
-        <Button style = {styles.button} variant="contained"
-                onClick={() => {numClick(3)}}>
-          3
-        </Button>
-        <Button style = {styles.button} variant="contained"
-                onClick={() => {operationClick('-')}}>
-          -
-        </Button>
-        </div>
-        <div>
-        <Button style = {styles.button} variant="contained"
-                onClick={() => {numClick(0)}}>
-          0
-        </Button>
-        <Button style = {styles.button} variant="contained"
-                onClick={() => {numClick('.')}}>
-          .
-        </Button>
-        <Button style = {styles.button} variant="contained"
-                onClick={() => {operationClick('=')}}>
-          =
-        </Button>
-        <Button style = {styles.button} variant="contained"
-                onClick={() => {operationClick('+')}}>
-          +
-        </Button>
-        </div>
-        <div>
-        <Button style = {styles.button} variant="contained"
-                onClick={() => {deleteClick()}}>
-          Delete
-        </Button>
-        </div>
-        <div>
-        <Button style = {styles.examples} variant="contained"
-                onClick={()=> {returnExamplesFromBE()}}>
-          Отримати та вирішити приклади
-        </Button>
-        </div>
-    </div>
-    );
+      addToArray(array, element) {
+            array.push(element+"\n");
+      }
+
+      calculateExpression(valueForCalc, signForCalc) {
+          const displayStr = String(this.state.display);
+          let expressionToReturn = "";
+          const result = this.state.expression.result;
+          const sign = this.state.expression.sign;
+
+          if (displayStr.endsWith("+") || displayStr.endsWith("-") ||
+              displayStr.endsWith("*") || displayStr.endsWith("/")) {
+              if (signForCalc === "=") {
+                  return expressionToReturn;
+              }
+              this.setState({
+                    expression: {
+                        ...this.state.expression,
+                        sign: signForCalc,
+                    },
+                    display: (this.state.display.slice(0,this.state.display.length-1)+
+                                        signForCalc)});
+            return expressionToReturn;
+          }
+
+          if (!displayStr.includes("+") && !displayStr.includes("-") &&
+               !displayStr.includes("*") && !displayStr.includes("/")) {
+               if (signForCalc === "=") {
+                   return expressionToReturn;
+               }
+          }
+
+          if (sign === "") {
+              this.setState({expression: {
+                  result: valueForCalc,
+                  sign: signForCalc,
+              },
+              display: (this.state.display+signForCalc)});
+          } else {
+          const currentResult = (sign === "+")?
+                                (Number(result)+Number(valueForCalc)):
+                                    (sign === "-")?
+                                    (result-valueForCalc):
+                                        (sign === "*")?
+                                        (result*valueForCalc):
+                                            (sign === "/")&&(valueForCalc!==0)?
+                                            (result/valueForCalc):
+                                                (sign === "/")&&(valueForCalc===0)?
+                                                ("Division by zero"):
+                                                0;
+              expressionToReturn = String(result)+sign+
+                                   String(valueForCalc)+"="+currentResult;
+              if (signForCalc === "=") {
+                    this.setState({num: currentResult,
+                                   display: currentResult,
+                                   expression: {
+                                    sign: "",
+                                    result: 0,
+                                  }});
+              } else {
+                this.setState({expression: {
+                                   result: currentResult,
+                                   sign: signForCalc,
+                               },
+                               display: (currentResult+signForCalc)});
+              }
+          }
+          return expressionToReturn;
+      }
+
+      deleteClick() {
+        this.setState({num: 0,
+                       display: "",
+                       expression: {
+                             sign: "",
+                             result: 0,
+                       }});
+      };
+
+      parseExamples(array) {
+                let arr = [];
+              array.forEach(element => {console.log(element);
+                  let argument1 = parseInt(element);
+                  let argument2 = 0;
+                  let result = 0;
+                  let resultExpression = "";
+                  if (element.includes("+")) {
+                      argument2 = parseInt(element.slice(element.indexOf("+")+1));
+                      result = argument1+argument2;
+                      resultExpression = ""+argument1+"+"+argument2+"="+result;
+                  } else if (element.includes("-")) {
+                      argument2 = parseInt(element.slice(element.indexOf("-")+1));
+                      result = argument1-argument2;
+                      resultExpression = ""+argument1+"-"+argument2+"="+result;
+                  } else if (element.includes("*")) {
+                      argument2 = parseInt(element.slice(element.indexOf("*")+1));
+                      result = argument1*argument2;
+                      resultExpression = ""+argument1+"*"+argument2+"="+result;
+                  } else if (element.includes("/")) {
+                      argument2 = parseInt(element.slice(element.indexOf("/")+1));
+                      result = argument1/argument2;
+                      resultExpression = ""+argument1+"/"+argument2+"="+result;
+                  }
+                  //this.addToArray(this.state.exampleArray, resultExpression);
+                  arr.push(resultExpression);
+              });
+          return arr;
+      }
+
+      transformArray(array) {
+              let joinedString = "";
+              if (array != undefined) {
+                  if (array.length > 0) {
+                      let arrayWithoutLastElement = array.slice(0, array.length-1);
+                      joinedString = arrayWithoutLastElement.join("");
+                      joinedString += "-------------------------\n"+
+                                      array[array.length-1]+
+                                      "-------------------------"
+                  }
+              }
+              return joinedString;
+      };
+
+      render() {
+      console.log(this.state);
+          return (
+            <div className = {this.props.classes.wrapper}>
+                <div>
+                    <TextField id="outlined" multiline maxRows={4}
+                               value={this.transformArray(this.state.exampleArray)}
+                               variant="outlined" size="medium"
+                               inputProps={{style: { textAlign: 'right' }}}/>
+                </div>
+                <div>
+                    <TextField id="outlined" value={this.state.display}
+                               variant="filled" size="small" color="secondary"
+                               inputProps={{style: { textAlign: 'center' }}}/>
+                    </div>
+                    <div>
+                    <Button className = {this.props.classes.button} variant="contained"
+                            onClick={() => this.numClick(7)}>
+                      7
+                    </Button>
+                    <Button className = {this.props.classes.button} variant="contained"
+                            onClick={() => this.numClick(8)}>
+                      8
+                    </Button>
+                    <Button className = {this.props.classes.button} variant="contained"
+                            onClick={() => this.numClick(9)}>
+                      9
+                    </Button>
+                    <Button className = {this.props.classes.button} variant="contained"
+                            onClick={() => this.operationClick('/')}>
+                      /
+                    </Button>
+                    </div>
+                    <div>
+                    <Button className = {this.props.classes.button} variant="contained"
+                            onClick={() => this.numClick(4)}>
+                      4
+                    </Button>
+                    <Button className = {this.props.classes.button} variant="contained"
+                            onClick={() => this.numClick(5)}>
+                      5
+                    </Button>
+                    <Button className = {this.props.classes.button} variant="contained"
+                            onClick={() => this.numClick(6)}>
+                      6
+                    </Button>
+                    <Button className = {this.props.classes.button} variant="contained"
+                            onClick={() => this.operationClick('*')}>
+                      *
+                    </Button>
+                    </div>
+                    <div>
+                    <Button className = {this.props.classes.button} variant="contained"
+                            onClick={() => this.numClick(1)}>
+                      1
+                    </Button>
+                    <Button className = {this.props.classes.button} variant="contained"
+                            onClick={() => this.numClick(2)}>
+                      2
+                    </Button>
+                    <Button className = {this.props.classes.button} variant="contained"
+                            onClick={() => this.numClick(3)}>
+                      3
+                    </Button>
+                    <Button className = {this.props.classes.button} variant="contained"
+                            onClick={() => this.operationClick('-')}>
+                      -
+                    </Button>
+                    </div>
+                    <div>
+                    <Button className = {this.props.classes.button} variant="contained"
+                            onClick={() => this.numClick(0)}>
+                      0
+                    </Button>
+                    <Button className = {this.props.classes.button} variant="contained"
+                            onClick={() => this.numClick('.')}>
+                      .
+                    </Button>
+                    <Button className = {this.props.classes.button} variant="contained"
+                            onClick={() => this.operationClick('=')}>
+                      =
+                    </Button>
+                    <Button className = {this.props.classes.button} variant="contained"
+                            onClick={() => this.operationClick('+')}>
+                      +
+                    </Button>
+                    </div>
+                    <div>
+                    <Button className = {this.props.classes.button} variant="contained"
+                            onClick={() => this.deleteClick()}>
+                      Delete
+                    </Button>
+                    </div>
+                    <Provider store = {store}>
+                        <Examples getExamplesFromBackEnd = {this.parseExamples} >
+                        </Examples>
+                    </Provider>
+                </div>
+          );
+      }
+
 }
 
-export default App;
+export default withStyles(styles)(App);

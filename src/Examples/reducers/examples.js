@@ -2,7 +2,8 @@ const initialState = {
 isLoading: false,
 isError: false,
 list: [],
- name: "BE Examples",
+name: "BE Examples",
+calculatedArray: [],
 };
 
 const examplesReducer = (state = initialState, action) => {
