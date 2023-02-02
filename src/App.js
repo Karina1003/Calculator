@@ -59,7 +59,10 @@ class App extends React.Component {
       operationClick(value) {
         const result = this.calculateExpression(this.state.num, value);
         if (result !=="") {
-          this.addToArray(this.state.exampleArray, result);
+            this.setState({
+                        exampleArray: this.state.exampleArray.concat([result+"\n"]),
+            });
+          //this.addToArray(this.state.exampleArray, result);
         }
         if (value !== "=") {
           this.setState({num: 0});
@@ -169,6 +172,10 @@ class App extends React.Component {
                       result = argument1/argument2;
                       resultExpression = ""+argument1+"/"+argument2+"="+result;
                   }
+                  console.log(this);
+//                  this.setState({
+//                                exampleArray: this.exampleArray.push(resultExpression),
+//                  });
                   //this.addToArray(this.state.exampleArray, resultExpression);
                   arr.push(resultExpression);
               });
@@ -177,7 +184,7 @@ class App extends React.Component {
 
       transformArray(array) {
               let joinedString = "";
-              if (array != undefined) {
+              if (array !== undefined) {
                   if (array.length > 0) {
                       let arrayWithoutLastElement = array.slice(0, array.length-1);
                       joinedString = arrayWithoutLastElement.join("");
